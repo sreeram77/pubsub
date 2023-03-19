@@ -5,6 +5,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/sreeram77/pubsub/publisher"
+	"github.com/sreeram77/pubsub/subscriber"
 	"google.golang.org/grpc"
 )
 
@@ -20,6 +21,7 @@ func main() {
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 	publisher.RegisterPublisherServer(grpcServer, publisher.NewServer())
+	subscriber.RegisterSubscriberServer(grpcServer, subscriber.NewServer())
 
 	grpcServer.Serve(lis)
 }
