@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = "github.com/sreeram77/pubsub/subscriber";
+
+service Subscriber {
+    rpc Subscribe (Topic) returns (Ack) {}
+}
+
+message Topic {
+    string topic = 1;
+}
+
+message Ack {
+    bool success = 1;
+    string message = 2;
+}
