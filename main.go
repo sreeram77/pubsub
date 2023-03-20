@@ -22,10 +22,10 @@ func main() {
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 
-	manager := manager.New()
+	eventManager := manager.New()
 
-	publisherServer := publisher.NewServer(manager)
-	subscriberServer := subscriber.NewServer(manager)
+	publisherServer := publisher.NewServer(eventManager)
+	subscriberServer := subscriber.NewServer(eventManager)
 
 	publisher.RegisterPublisherServer(grpcServer, publisherServer)
 	subscriber.RegisterSubscriberServer(grpcServer, subscriberServer)

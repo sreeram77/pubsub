@@ -7,10 +7,10 @@ import (
 )
 
 type Server struct {
-	manager *manager.Manager
+	manager manager.Manager
 }
 
-func NewServer(m *manager.Manager) *Server {
+func NewServer(m manager.Manager) *Server {
 	return &Server{manager: m}
 }
 
