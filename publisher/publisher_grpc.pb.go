@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PublisherClient interface {
-	Publish(ctx context.Context, in *Event, opts ...grpc.CallOption) (*Ack, error)
+	Publish(ctx context.Context, opts ...grpc.CallOption) (Publisher_PublishClient, error)
 }
 
 type publisherClient struct {
@@ -33,20 +33,45 @@ func NewPublisherClient(cc grpc.ClientConnInterface) PublisherClient {
 	return &publisherClient{cc}
 }
 
-func (c *publisherClient) Publish(ctx context.Context, in *Event, opts ...grpc.CallOption) (*Ack, error) {
-	out := new(Ack)
-	err := c.cc.Invoke(ctx, "/Publisher/Publish", in, out, opts...)
+func (c *publisherClient) Publish(ctx context.Context, opts ...grpc.CallOption) (Publisher_PublishClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Publisher_ServiceDesc.Streams[0], "/Publisher/Publish", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &publisherPublishClient{stream}
+	return x, nil
+}
+
+type Publisher_PublishClient interface {
+	Send(*Event) error
+	CloseAndRecv() (*Status, error)
+	grpc.ClientStream
+}
+
+type publisherPublishClient struct {
+	grpc.ClientStream
+}
+
+func (x *publisherPublishClient) Send(m *Event) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *publisherPublishClient) CloseAndRecv() (*Status, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(Status)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // PublisherServer is the server API for Publisher service.
 // All implementations must embed UnimplementedPublisherServer
 // for forward compatibility
 type PublisherServer interface {
-	Publish(context.Context, *Event) (*Ack, error)
+	Publish(Publisher_PublishServer) error
 	mustEmbedUnimplementedPublisherServer()
 }
 
@@ -54,8 +79,8 @@ type PublisherServer interface {
 type UnimplementedPublisherServer struct {
 }
 
-func (UnimplementedPublisherServer) Publish(context.Context, *Event) (*Ack, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Publish not implemented")
+func (UnimplementedPublisherServer) Publish(Publisher_PublishServer) error {
+	return status.Errorf(codes.Unimplemented, "method Publish not implemented")
 }
 func (UnimplementedPublisherServer) mustEmbedUnimplementedPublisherServer() {}
 
@@ -70,22 +95,30 @@ func RegisterPublisherServer(s grpc.ServiceRegistrar, srv PublisherServer) {
 	s.RegisterService(&Publisher_ServiceDesc, srv)
 }
 
-func _Publisher_Publish_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Event)
-	if err := dec(in); err != nil {
+func _Publisher_Publish_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(PublisherServer).Publish(&publisherPublishServer{stream})
+}
+
+type Publisher_PublishServer interface {
+	SendAndClose(*Status) error
+	Recv() (*Event, error)
+	grpc.ServerStream
+}
+
+type publisherPublishServer struct {
+	grpc.ServerStream
+}
+
+func (x *publisherPublishServer) SendAndClose(m *Status) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *publisherPublishServer) Recv() (*Event, error) {
+	m := new(Event)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
-	if interceptor == nil {
-		return srv.(PublisherServer).Publish(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/Publisher/Publish",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PublisherServer).Publish(ctx, req.(*Event))
-	}
-	return interceptor(ctx, in, info, handler)
+	return m, nil
 }
 
 // Publisher_ServiceDesc is the grpc.ServiceDesc for Publisher service.
@@ -94,12 +127,13 @@ func _Publisher_Publish_Handler(srv interface{}, ctx context.Context, dec func(i
 var Publisher_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "Publisher",
 	HandlerType: (*PublisherServer)(nil),
-	Methods: []grpc.MethodDesc{
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "Publish",
-			Handler:    _Publisher_Publish_Handler,
+			StreamName:    "Publish",
+			Handler:       _Publisher_Publish_Handler,
+			ClientStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "publisher/publisher.proto",
 }

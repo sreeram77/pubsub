@@ -3,7 +3,7 @@ syntax = "proto3";
 option go_package = "github.com/sreeram77/pubsub/publisher";
 
 service Publisher {
-    rpc Publish (Event) returns (Ack) {}
+    rpc Publish (stream Event) returns (Status) {}
 }
 
 message Event {
@@ -11,7 +11,7 @@ message Event {
     bytes message = 2;
 }
 
-message Ack {
+message Status {
     bool success = 1;
     string message = 2;
 }
