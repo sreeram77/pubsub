@@ -1,6 +1,9 @@
 package manager
 
-import "github.com/sreeram77/pubsub/event"
+import (
+	log "github.com/sirupsen/logrus"
+	"github.com/sreeram77/pubsub/event"
+)
 
 type eventManager struct {
 }
@@ -9,10 +12,12 @@ func New() Manager {
 	return &eventManager{}
 }
 
-func (e *eventManager) RegisterSubscriber() error {
+func (em *eventManager) RegisterSubscriber() error {
 	return nil
 }
 
-func (e *eventManager) Broadcast(event.Event) error {
+func (em *eventManager) Broadcast(e event.Event) error {
+	log.Info("Event:", e)
+
 	return nil
 }

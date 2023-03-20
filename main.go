@@ -12,6 +12,7 @@ import (
 
 func main() {
 	log.SetFormatter(&log.TextFormatter{})
+	log.SetLevel(log.TraceLevel)
 
 	lis, err := net.Listen("tcp", ":8000")
 	if err != nil {
