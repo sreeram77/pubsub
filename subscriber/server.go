@@ -1,12 +1,17 @@
 package subscriber
 
-import "context"
+import (
+	"context"
+
+	"github.com/sreeram77/pubsub/manager"
+)
 
 type Server struct {
+	manager *manager.Manager
 }
 
-func NewServer() *Server {
-	return &Server{}
+func NewServer(m *manager.Manager) *Server {
+	return &Server{manager: m}
 }
 
 func (s *Server) Subscribe(c context.Context, e *Topic) (*Ack, error) {

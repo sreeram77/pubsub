@@ -4,6 +4,7 @@ import (
 	"net"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/sreeram77/pubsub/manager"
 	"github.com/sreeram77/pubsub/publisher"
 	"github.com/sreeram77/pubsub/subscriber"
 	"google.golang.org/grpc"
@@ -20,8 +21,14 @@ func main() {
 	log.Debug("Listening for Registration...")
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
-	publisher.RegisterPublisherServer(grpcServer, publisher.NewServer())
-	subscriber.RegisterSubscriberServer(grpcServer, subscriber.NewServer())
+
+	manager := manager.New()
+
+	publisherServer := publisher.NewServer(manager)
+	subscriberServer := subscriber.NewServer(manager)
+
+	publisher.RegisterPublisherServer(grpcServer, publisherServer)
+	subscriber.RegisterSubscriberServer(grpcServer, subscriberServer)
 
 	grpcServer.Serve(lis)
 }
