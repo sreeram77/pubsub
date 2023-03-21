@@ -11,7 +11,7 @@ func TestNew(t *testing.T) {
 
 	e := New(topic, body)
 
-	if string(e.body) != message || e.topic != topic {
+	if string(e.Body) != message || e.Topic != topic {
 		t.Fatal("Event creation failed")
 	}
 }

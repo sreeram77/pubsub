@@ -9,12 +9,14 @@ type eventManager struct {
 	connections map[string]([]chan event.Event)
 }
 
+// New returns an instance of eventManager that implements Manager interface.
 func New() Manager {
 	connections := make(map[string]([]chan event.Event))
 	return &eventManager{
 		connections: connections,
 	}
 }
+
 
 func (em *eventManager) RegisterSubscriber(topic string, eventChan chan event.Event) error {
 	log.Info("Registering subscriber for topic:", topic)
@@ -31,7 +33,19 @@ func (em *eventManager) RegisterSubscriber(topic string, eventChan chan event.Ev
 }
 
 func (em *eventManager) Broadcast(e event.Event) error {
-	log.Info("Event:", e)
+	log.Info("Broadcasting event:", e)
+
+	if value, found := em.connections[e.Topic]; found {
+		broadcastEvent(e, value)
+	}
 
 	return nil
+}
+
+func broadcastEvent(e event.Event, s []chan event.Event) {
+	for _, v := range s {
+		go func(c chan event.Event) {
+			c <- e
+		}(v)
+	}
 }

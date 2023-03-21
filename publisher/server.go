@@ -8,14 +8,18 @@ import (
 	"github.com/sreeram77/pubsub/manager"
 )
 
+// Server is responsible for serving publisher requests.
 type Server struct {
 	manager manager.Manager
 }
 
+// NewServer returns a new instance of publisher Server.
 func NewServer(m manager.Manager) *Server {
 	return &Server{manager: m}
 }
 
+// Publish polls for published events and forwards it to event manager for
+// broadcasting to the subscribers of that topic.
 func (s *Server) Publish(stream Publisher_PublishServer) error {
 	for {
 		e, err := stream.Recv()
@@ -38,4 +42,5 @@ func (s *Server) Publish(stream Publisher_PublishServer) error {
 	}
 }
 
+// mustEmbedUnimplementedPublisherServer is added to implement PublisherServer interface.
 func (s *Server) mustEmbedUnimplementedPublisherServer() {}
