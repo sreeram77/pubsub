@@ -12,7 +12,7 @@ func New() Manager {
 	return &eventManager{}
 }
 
-func (em *eventManager) RegisterSubscriber() error {
+func (em *eventManager) RegisterSubscriber(topic string, eventChan chan event.Event) error {
 	return nil
 }
 

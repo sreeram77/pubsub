@@ -1,8 +1,10 @@
 package manager
 
-import "github.com/sreeram77/pubsub/event"
+import (
+	"github.com/sreeram77/pubsub/event"
+)
 
 type Manager interface {
-	RegisterSubscriber() error
+	RegisterSubscriber(string, chan event.Event) error
 	Broadcast(event.Event) error
 }
