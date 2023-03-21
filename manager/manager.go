@@ -17,6 +17,16 @@ func New() Manager {
 }
 
 func (em *eventManager) RegisterSubscriber(topic string, eventChan chan event.Event) error {
+	log.Info("Registering subscriber for topic:", topic)
+
+	_, found := em.connections[topic]
+	if found {
+		em.connections[topic] = append(em.connections[topic], eventChan)
+		return nil
+	}
+
+	em.connections[topic] = []chan event.Event{eventChan}
+
 	return nil
 }
 
