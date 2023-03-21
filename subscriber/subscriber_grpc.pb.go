@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SubscriberClient interface {
-	Subscribe(ctx context.Context, in *Topic, opts ...grpc.CallOption) (*Ack, error)
+	Subscribe(ctx context.Context, in *Topic, opts ...grpc.CallOption) (Subscriber_SubscribeClient, error)
 }
 
 type subscriberClient struct {
@@ -33,20 +33,43 @@ func NewSubscriberClient(cc grpc.ClientConnInterface) SubscriberClient {
 	return &subscriberClient{cc}
 }
 
-func (c *subscriberClient) Subscribe(ctx context.Context, in *Topic, opts ...grpc.CallOption) (*Ack, error) {
-	out := new(Ack)
-	err := c.cc.Invoke(ctx, "/Subscriber/Subscribe", in, out, opts...)
+func (c *subscriberClient) Subscribe(ctx context.Context, in *Topic, opts ...grpc.CallOption) (Subscriber_SubscribeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Subscriber_ServiceDesc.Streams[0], "/Subscriber/Subscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &subscriberSubscribeClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Subscriber_SubscribeClient interface {
+	Recv() (*REvent, error)
+	grpc.ClientStream
+}
+
+type subscriberSubscribeClient struct {
+	grpc.ClientStream
+}
+
+func (x *subscriberSubscribeClient) Recv() (*REvent, error) {
+	m := new(REvent)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // SubscriberServer is the server API for Subscriber service.
 // All implementations must embed UnimplementedSubscriberServer
 // for forward compatibility
 type SubscriberServer interface {
-	Subscribe(context.Context, *Topic) (*Ack, error)
+	Subscribe(*Topic, Subscriber_SubscribeServer) error
 	mustEmbedUnimplementedSubscriberServer()
 }
 
@@ -54,8 +77,8 @@ type SubscriberServer interface {
 type UnimplementedSubscriberServer struct {
 }
 
-func (UnimplementedSubscriberServer) Subscribe(context.Context, *Topic) (*Ack, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Subscribe not implemented")
+func (UnimplementedSubscriberServer) Subscribe(*Topic, Subscriber_SubscribeServer) error {
+	return status.Errorf(codes.Unimplemented, "method Subscribe not implemented")
 }
 func (UnimplementedSubscriberServer) mustEmbedUnimplementedSubscriberServer() {}
 
@@ -70,22 +93,25 @@ func RegisterSubscriberServer(s grpc.ServiceRegistrar, srv SubscriberServer) {
 	s.RegisterService(&Subscriber_ServiceDesc, srv)
 }
 
-func _Subscriber_Subscribe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Topic)
-	if err := dec(in); err != nil {
-		return nil, err
+func _Subscriber_Subscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Topic)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(SubscriberServer).Subscribe(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/Subscriber/Subscribe",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SubscriberServer).Subscribe(ctx, req.(*Topic))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(SubscriberServer).Subscribe(m, &subscriberSubscribeServer{stream})
+}
+
+type Subscriber_SubscribeServer interface {
+	Send(*REvent) error
+	grpc.ServerStream
+}
+
+type subscriberSubscribeServer struct {
+	grpc.ServerStream
+}
+
+func (x *subscriberSubscribeServer) Send(m *REvent) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 // Subscriber_ServiceDesc is the grpc.ServiceDesc for Subscriber service.
@@ -94,12 +120,13 @@ func _Subscriber_Subscribe_Handler(srv interface{}, ctx context.Context, dec fun
 var Subscriber_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "Subscriber",
 	HandlerType: (*SubscriberServer)(nil),
-	Methods: []grpc.MethodDesc{
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "Subscribe",
-			Handler:    _Subscriber_Subscribe_Handler,
+			StreamName:    "Subscribe",
+			Handler:       _Subscriber_Subscribe_Handler,
+			ServerStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "subscriber/subscriber.proto",
 }
