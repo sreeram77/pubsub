@@ -6,10 +6,14 @@ import (
 )
 
 type eventManager struct {
+	connections map[string]([]chan event.Event)
 }
 
 func New() Manager {
-	return &eventManager{}
+	connections := make(map[string]([]chan event.Event))
+	return &eventManager{
+		connections: connections,
+	}
 }
 
 func (em *eventManager) RegisterSubscriber(topic string, eventChan chan event.Event) error {
