@@ -5,13 +5,15 @@ import (
 	"github.com/sreeram77/pubsub/event"
 )
 
+type subscribers []chan event.Event
+
 type eventManager struct {
-	connections map[string]([]chan event.Event)
+	connections map[string]subscribers
 }
 
 // New returns an instance of eventManager that implements Manager interface.
 func New() Manager {
-	connections := make(map[string]([]chan event.Event))
+	connections := make(map[string]subscribers)
 	return &eventManager{
 		connections: connections,
 	}
