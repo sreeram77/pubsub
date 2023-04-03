@@ -3,33 +3,26 @@ package manager
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/sreeram77/pubsub/event"
+	"github.com/sreeram77/pubsub/storage"
 )
 
 type subscribers []chan event.Event
 
 type eventManager struct {
-	connections map[string]subscribers
+	connections storage.Cache
 }
 
 // New returns an instance of eventManager that implements Manager interface.
-func New() Manager {
-	connections := make(map[string]subscribers)
+func New(r storage.Cache) Manager {
 	return &eventManager{
-		connections: connections,
+		connections: r,
 	}
 }
-
 
 func (em *eventManager) RegisterSubscriber(topic string, eventChan chan event.Event) error {
 	log.Info("Registering subscriber for topic:", topic)
 
-	_, found := em.connections[topic]
-	if found {
-		em.connections[topic] = append(em.connections[topic], eventChan)
-		return nil
-	}
-
-	em.connections[topic] = []chan event.Event{eventChan}
+	em.connections.Set(topic, eventChan)
 
 	return nil
 }
@@ -37,17 +30,13 @@ func (em *eventManager) RegisterSubscriber(topic string, eventChan chan event.Ev
 func (em *eventManager) Broadcast(e event.Event) error {
 	log.Info("Broadcasting event:", e)
 
-	if value, found := em.connections[e.Topic]; found {
-		broadcastEvent(e, value)
+	conns := em.connections.Get(e.Topic)
+
+	for _, conn := range conns {
+		go func(c chan event.Event) {
+			c <- e
+		}(conn.(chan event.Event))
 	}
 
 	return nil
-}
-
-func broadcastEvent(e event.Event, s []chan event.Event) {
-	for _, v := range s {
-		go func(c chan event.Event) {
-			c <- e
-		}(v)
-	}
 }
