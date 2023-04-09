@@ -6,6 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/sreeram77/pubsub/manager"
 	"github.com/sreeram77/pubsub/publisher"
+	"github.com/sreeram77/pubsub/storage"
 	"github.com/sreeram77/pubsub/subscriber"
 	"google.golang.org/grpc"
 )
@@ -23,7 +24,9 @@ func main() {
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 
-	eventManager := manager.New()
+	cache := storage.New()
+
+	eventManager := manager.New(cache)
 
 	publisherServer := publisher.NewServer(eventManager)
 	subscriberServer := subscriber.NewServer(eventManager)

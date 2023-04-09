@@ -35,7 +35,7 @@ func (em *eventManager) Broadcast(e event.Event) error {
 	for _, conn := range conns {
 		go func(c chan event.Event) {
 			c <- e
-		}(conn.(chan event.Event))
+		}(conn)
 	}
 
 	return nil
