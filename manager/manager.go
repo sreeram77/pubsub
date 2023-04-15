@@ -22,6 +22,7 @@ func New(r storage.Cache) Manager {
 func (em *eventManager) RegisterSubscriber(topics []string, eventChan chan event.Event) error {
 	log.Info("Registering subscriber for topic:", topics)
 
+	// Save topics with subscriber connection
 	for _, topic := range topics {
 		em.connections.Set(topic, eventChan)
 	}
@@ -32,8 +33,10 @@ func (em *eventManager) RegisterSubscriber(topics []string, eventChan chan event
 func (em *eventManager) Broadcast(e event.Event) error {
 	log.Info("Broadcasting event:", e)
 
+	// Get all connections for the topic
 	conns := em.connections.Get(e.Topic)
 
+	// Broadcast event to all subscribers
 	for _, conn := range conns {
 		go func(c chan event.Event) {
 			c <- e

@@ -14,6 +14,5 @@ go run main.go
 ```
 
 ## Roadmap
-- Support subscription of multiple events.
 - Replace map with in-memory database to support horizontal scaling.
 - Persist subscription information.
