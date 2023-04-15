@@ -5,6 +5,6 @@ import (
 )
 
 type Manager interface {
-	RegisterSubscriber(string, chan event.Event) error
+	RegisterSubscriber([]string, chan event.Event) error
 	Broadcast(event.Event) error
 }
