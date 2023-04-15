@@ -7,7 +7,7 @@ service Subscriber {
 }
 
 message Topic {
-    string topic = 1;
+    repeated string topic = 1;
 }
 
 message REvent {
