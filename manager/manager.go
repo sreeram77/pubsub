@@ -19,10 +19,12 @@ func New(r storage.Cache) Manager {
 	}
 }
 
-func (em *eventManager) RegisterSubscriber(topic string, eventChan chan event.Event) error {
-	log.Info("Registering subscriber for topic:", topic)
+func (em *eventManager) RegisterSubscriber(topics []string, eventChan chan event.Event) error {
+	log.Info("Registering subscriber for topic:", topics)
 
-	em.connections.Set(topic, eventChan)
+	for _, topic := range topics {
+		em.connections.Set(topic, eventChan)
+	}
 
 	return nil
 }
